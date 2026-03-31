@@ -1,0 +1,8 @@
+[
+    {
+        "name": "pipeline_rag_fucytech_details",
+        "steps": [
+            "Code Analyzer"
+        ]
+    }
+]
