@@ -1,60 +1,52 @@
 import json
-import os
-from datetime import datetime
+from database import (
+    save_workflow_def, 
+    get_all_workflow_defs, 
+    delete_workflow_def, 
+    get_execution_history,
+    get_connection
+)
 
-FILE_PATH = "workflows/workflows.json"
+# Bridge old functions to the NEW SQLite database for persistence
 
 def load_workflows():
-    if not os.path.exists(FILE_PATH):
-        return []
-    
-    try:
-        with open(FILE_PATH, "r") as f:
-            content = f.read().strip()
-            if not content:
-                return []
-            return json.loads(content)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return []
+    """Wrapper for backward compatibility in UI."""
+    return get_all_workflows()
 
-def save_workflow(name, steps):
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
-    
-    workflows = load_workflows()
-    
-    # Add new workflow with timestamp
-    workflows.append({
-        "name": name,
-        "steps": steps,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    })
-
-    with open(FILE_PATH, "w") as f:
-        json.dump(workflows, f, indent=4)
+def save_workflow(name, steps, output=None, history=None):
+    """Saves a workflow definition."""
+    return save_workflow_def(name, steps)
 
 def get_workflow_by_name(name):
-    workflows = load_workflows()
-    
-    for wf in workflows:
-        if wf["name"] == name:
-            return wf["steps"]
-    
+    """Retrieves steps for a specific workflow name."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT steps FROM workflows WHERE name = ?", (name,))
+    row = cursor.fetchone()
+    conn.close()
+    if row:
+        return json.loads(row['steps'])
     return None
 
 def get_all_workflows():
-    """Returns all workflows, newest first."""
-    workflows = load_workflows()
-    # Handle older entries without timestamp
-    return sorted(workflows, key=lambda x: x.get("timestamp", ""), reverse=True)
+    """Maps SQL rows to the format expected by the Streamlit UI."""
+    defs = get_all_workflow_defs()
+    # Map 'created_at' to 'timestamp' and parse 'steps'
+    for d in defs:
+        d['timestamp'] = d.pop('created_at')
+        d['steps'] = json.loads(d['steps'])
+    return defs
 
 def delete_workflow(index):
-    """Deletes workflow by index in the loaded list."""
-    # Note: Index should map to the full list, but usually we manage this in the UI
-    workflows = load_workflows()
+    """Deletes a workflow. In SQLite, we use the ID from the loaded list."""
+    # This index approach is brittle, but for migration we'll handle it
+    workflows = get_all_workflows()
     if 0 <= index < len(workflows):
-        workflows.pop(index)
-        with open(FILE_PATH, "w") as f:
-            json.dump(workflows, f, indent=4)
+        wf_id = workflows[index]['id']
+        delete_workflow_def(wf_id)
         return True
     return False
+
+def get_recent_executions(limit=10):
+    """New functionality: fetch structured run history."""
+    return get_execution_history(limit)

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  ai-platform:
+    build: .
+    container_name: ai_workflow_platform
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      # Ensure SQLite DB persists outside container
+      - db_data:/app/data
+    env_file:
+      - .env
+    restart: always
+
+volumes:
+  db_data:

@@ -1,192 +1,150 @@
 import streamlit as st
-from workflow_engine import run_workflow
+import httpx
+import time
+import traceback
 from utils.file_parser import parse_file
 from utils.workflow_manager import load_workflows, save_workflow, get_workflow_by_name, get_all_workflows, delete_workflow
-import traceback
+
+import os
 
 # --- Configuration ---
-st.set_page_config(page_title="AI Workflow Automation Platform", layout="wide")
-st.title("🚀 AI Workflow Automation Platform")
+st.set_page_config(page_title="AI Workflow | System v3", layout="wide", page_icon="⚡")
 
-# --- Constants ---
-SUPPORTED_FILE_TYPES = [
-    "pdf", "jpg", "jpeg", "png", "csv", "json", "xlsx", "pptx", "txt", "py"
-]
-AVAILABLE_WORKFLOW_STEPS = ["Summarizer", "Email Generator", "Code Analyzer", "Condition"]
-AVAILABLE_WORKFLOW_STEPS.sort()
+# On Render, the backend URL will be provided via Environment Variable
+API_URL = os.getenv("API_URL", "http://localhost:8000/api")
+if not API_URL.endswith("/api"):
+    API_URL = f"{API_URL}/api"
 
-# --- Session State Initialization ---
-if 'user_input' not in st.session_state:
-    st.session_state.user_input = ""
-if 'file_processing_error' not in st.session_state:
-    st.session_state.file_processing_error = None
-if 'selected_steps' not in st.session_state:
-    st.session_state.selected_steps = []
-if 'active_wf_name' not in st.session_state:
-    st.session_state.active_wf_name = "New Workflow"
+# --- Premium Glassmorphism CSS ---
+st.markdown("""
+    <style>
+    .main { background: #0f172a; color: #f1f5f9; }
+    .stButton>button { border-radius: 8px; border: 1px solid #38bdf8; background: rgba(56,189,248,0.1); }
+    [data-testid="stExpander"] { background: rgba(30,41,59,0.5); border: 1px solid #334155; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- Callback for Quick Load ---
-def on_quick_load_change():
-    selected_wf = st.session_state.get("quick_load_select")
-    if selected_wf and selected_wf != "None":
-        loaded_steps = get_workflow_by_name(selected_wf)
-        if loaded_steps:
-            st.session_state.selected_steps = loaded_steps
-            st.session_state.active_wf_name = selected_wf
+st.title("⚡ AI Workflow Orchestrator")
+st.caption("Architecture: Streamlit (Frontend) + FastAPI (Async Engine)")
 
-# --- Callback for Sidebar Load ---
-def load_historical_workflow(wf_name, steps):
-    st.session_state.selected_steps = steps
-    st.session_state.active_wf_name = wf_name
+# --- State ---
+if 'exec_id' not in st.session_state: st.session_state.exec_id = None
+if 'user_input' not in st.session_state: st.session_state.user_input = ""
 
-# --- Sidebar: Workflow History ---
+# --- Sidebar: History ---
 with st.sidebar:
-    st.header("🕒 Workflow History")
-    history = get_all_workflows()
-    
-    if not history:
-        st.info("No saved workflows yet.")
-    else:
-        for i, wf in enumerate(history):
-            display_name = wf.get("name", "Unnamed")
-            timestamp = wf.get("timestamp", "N/A")
-            
-            with st.expander(f"{display_name}"):
-                st.caption(f"Saved at: {timestamp}")
-                st.write("**Steps:**")
-                for step in wf.get("steps", []):
-                    st.write(f"- {step}")
-                
-                col1, col2 = st.columns(2)
-                # Using on_click to avoid state modification error
-                col1.button("Load", key=f"load_history_{i}", 
-                            on_click=load_historical_workflow, 
-                            args=(display_name, wf["steps"]))
-                
-                if col2.button("Delete", key=f"delete_history_{i}"):
-                    all_wfs = load_workflows()
-                    for idx, original_wf in enumerate(all_wfs):
-                        if (original_wf.get("timestamp") == wf.get("timestamp") and 
-                            original_wf.get("name") == wf.get("name") and
-                            original_wf.get("steps") == wf.get("steps")):
-                            delete_workflow(idx)
-                            st.warning(f"Deleted: {display_name}")
-                            st.rerun()
-                            break
+    st.header("🕒 Recent Executions")
+    try:
+        resp = httpx.get(f"{API_URL}/history")
+        if resp.status_code == 200:
+            for ex in resp.json():
+                with st.expander(f"{ex.get('workflow_name') or 'Custom Run'}"):
+                    st.caption(f"ID: {ex['id'][:8]} | {ex['status']}")
+                    if st.button("View", key=f"view_{ex['id']}"):
+                        st.session_state.exec_id = ex['id']
+    except Exception:
+        st.error("API Offline")
 
-# --- Main Layout ---
-col_main, col_spacer = st.columns([3, 1])
+# --- Main Logic ---
+col_main, col_res = st.columns([2, 2])
 
 with col_main:
-    # --- Input Section ---
-    input_type = st.radio(
-        "Select Input Type",
-        ["Text", "File"],
-        key="input_type_radio",
-        horizontal=True
-    )
-
-    if input_type == "Text":
-        st.session_state.user_input = st.text_area(
-            "Enter your input",
-            key="text_input_area",
-            height=200,
-            value=st.session_state.user_input
-        )
-        st.session_state.file_processing_error = None
-
-    else: # File input
-        uploaded_file = st.file_uploader(
-            "Upload File",
-            type=SUPPORTED_FILE_TYPES,
-            key="file_uploader"
-        )
-
-        if uploaded_file:
-            try:
-                with st.spinner("Processing file..."):
-                    st.session_state.user_input = parse_file(uploaded_file)
-                st.success("File processed successfully!")
-                st.session_state.file_processing_error = None
-            except Exception as e:
-                error_details = f"Error processing file: {e}\n{traceback.format_exc()}"
-                st.session_state.file_processing_error = error_details
-                st.error(error_details)
-                st.session_state.user_input = ""
-        else:
-            if st.session_state.get("input_type_radio") == "File":
-                st.session_state.user_input = ""
-
-    # --- Workflow Steps Selection ---
-    st.write(f"### ⚙️ Current Workflow: `{st.session_state.active_wf_name}`")
+    st.subheader("📥 Input Configuration")
+    input_mode = st.radio("Mode", ["Text", "File"], horizontal=True)
     
-    def on_steps_change():
-        if not st.session_state.active_wf_name.endswith("(Modified)") and st.session_state.active_wf_name != "New Workflow":
-            st.session_state.active_wf_name = f"{st.session_state.active_wf_name} (Modified)"
+    if input_mode == "Text":
+        inner_input = st.text_area("Content", height=150, value=st.session_state.user_input)
+    else:
+        uploaded = st.file_uploader("Upload", type=["pdf", "png", "jpg", "txt"])
+        if uploaded:
+            inner_input = parse_file(uploaded)
+        else: inner_input = ""
 
-    st.multiselect(
-        "Select Workflow Steps",
-        AVAILABLE_WORKFLOW_STEPS,
-        key="selected_steps",
-        on_change=on_steps_change
-    )
+    st.session_state.user_input = inner_input
 
-    # --- Run Workflow Button ---
-    if st.button("Run Workflow", key="run_workflow_button", type="primary"):
-        has_input = bool(st.session_state.user_input)
-        has_steps = bool(st.session_state.selected_steps)
-        has_file_error = bool(st.session_state.file_processing_error)
-
-        if not has_input and not has_file_error:
-            st.warning("Please provide input (text or upload a file).")
-        elif not has_steps:
-            st.warning("Please select at least one workflow step.")
-        elif has_file_error:
-            st.error("Cannot run workflow due to previous file processing error.")
+    # --- Template Loader ---
+    st.write("### 📂 Load Template")
+    try:
+        wf_resp = httpx.get(f"{API_URL}/workflows").json()
+        if wf_resp:
+            template_names = [t["name"] for t in wf_resp]
+            selected_template = st.selectbox("Quick Load Configuration", ["None"] + template_names)
+            
+            if selected_template != "None":
+                # Find the steps for the selected template
+                for t in wf_resp:
+                    if t["name"] == selected_template:
+                        st.session_state.current_template_steps = t["steps"]
+                        st.info(f"Loaded: **{selected_template}**")
+                        break
         else:
-            try:
-                with st.spinner("Running workflow..."):
-                    output, logs = run_workflow(st.session_state.selected_steps, st.session_state.user_input)
+            st.caption("No templates saved yet.")
+    except Exception:
+        st.caption("Error loading templates")
 
-                st.subheader("✨ Final Output")
-                with st.container(border=True):
-                    st.write(output)
+    # Get nodes from API
+    try:
+        nodes_resp = httpx.get(f"{API_URL}/nodes").json()
+        available_nodes = nodes_resp["available_nodes"]
+    except:
+        available_nodes = ["Summarizer", "Email Generator", "Code Analyzer", "Condition", "Web Search", "RAG Node"]
 
-                st.subheader("📝 Execution Logs")
-                if logs:
-                    for log_entry in logs:
-                        if isinstance(log_entry, dict) and "step" in log_entry:
-                            with st.expander(f"Step: {log_entry['step']}"):
-                                st.write(log_entry.get("output", "No output."))
+    # Initialize multiselect with loaded template if exists
+    default_steps = st.session_state.get("current_template_steps", [])
+    selected_nodes = st.multiselect("Select Pipeline Nodes", available_nodes, default=default_steps)
+
+    if st.button("🚀 Execute Pipeline", type="primary"):
+        if not inner_input or not selected_nodes:
+            st.warning("Input and Nodes required.")
+        else:
+            payload = {"nodes": selected_nodes, "input_text": inner_input}
+            with st.spinner("Dispatching to Async Engine..."):
+                res = httpx.post(f"{API_URL}/workflows/run", json=payload)
+                if res.status_code == 200:
+                    st.session_state.exec_id = res.json()["execution_id"]
+                    st.success(f"Job Dispatched: {st.session_state.exec_id[:8]}")
                 else:
-                    st.info("No logs generated.")
+                    st.error("API Dispatch Failed")
 
+with col_res:
+    st.subheader("📑 Results & Observability")
+    if st.session_state.exec_id:
+        # Polling for results
+        placeholder = st.empty()
+        
+        while True:
+            try:
+                status_res = httpx.get(f"{API_URL}/executions/{st.session_state.exec_id}").json()
+                status = status_res["status"]
+                
+                with placeholder.container():
+                    st.info(f"Status: **{status}**")
+                    
+                    if status == "COMPLETED":
+                        st.markdown("### ✨ Output")
+                        st.markdown(status_res["final_output"])
+                        
+                        st.markdown("### 📝 Detailed Logs")
+                        for step in status_res["steps"]:
+                            with st.expander(f"Node: {step['node_name']} ({step['duration_ms']}ms)"):
+                                st.code(step["output_data"])
+                        break
+                    elif status == "FAILED":
+                        st.error("Workflow failed. Check logs.")
+                        break
+                    else:
+                        st.write("Processing... 🔄")
+                        time.sleep(2)
             except Exception as e:
-                st.error(f"Execution Error: {e}")
-                st.error(traceback.format_exc())
+                st.error(f"Polling error: {e}")
+                break
+    else:
+        st.info("Run a workflow to see results here.")
 
-    st.divider()
-
-    # --- Save Section ---
-    st.subheader("💾 Save Workflow")
-    c1, c2 = st.columns([3, 1])
-    wf_name = c1.text_input("Workflow Name", placeholder="e.g. Analysis Pipeline v1")
-    if c2.button("Save", use_container_width=True):
-        if wf_name and st.session_state.selected_steps:
-            save_workflow(wf_name, st.session_state.selected_steps)
-            st.session_state.active_wf_name = wf_name
-            st.success(f"Workflow '{wf_name}' saved!")
-            st.rerun() 
-        else:
-            st.warning("Provide name and select steps")
-
-    # --- Load Section ---
-    st.subheader("📂 Quick Load")
-    saved_workflows = load_workflows()
-    unique_wf_names = sorted(list(set(wf["name"] for wf in saved_workflows)))
-    st.selectbox(
-        "Select by name", 
-        ["None"] + unique_wf_names, 
-        key="quick_load_select",
-        on_change=on_quick_load_change
-    )
+# --- Save Logic ---
+st.divider()
+wf_name = st.text_input("Save this sequence as a template")
+if st.button("Save Template"):
+    if wf_name and selected_nodes:
+        save_workflow(wf_name, selected_nodes)
+        st.toast("Template Saved!")

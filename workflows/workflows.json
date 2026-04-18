@@ -1,8 +1,9 @@
 [
     {
-        "name": "pipeline_rag_fucytech_details",
+        "name": "cold email",
         "steps": [
-            "Code Analyzer"
-        ]
+            "Email Generator"
+        ],
+        "timestamp": "2026-04-03 17:12:35"
     }
 ]

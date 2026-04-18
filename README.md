@@ -1,199 +1,97 @@
-# 🚀 AI Workflow Automation Platform
+# ⚡ AI Workflow Orchestration Engine (Core v2.0)
 
-An interactive **Streamlit-based AI automation app** for processing text and files through reusable workflow steps powered by **Google Gemini**.
+[![Production Ready](https://img.shields.io/badge/Status-Production--Ready-green?style=for-the-badge)](https://github.com/Keerthana1367/AI-Workflow-Automation-Platform)
+[![Docker](https://img.shields.io/badge/Infrastructure-Docker-blue?style=for-the-badge&logo=docker)](https://www.docker.com/)
+[![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite)](https://www.sqlite.org/)
+[![Pydantic](https://img.shields.io/badge/Validation-Pydantic-E92063?style=for-the-badge)](https://docs.pydantic.dev/)
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
-![Streamlit](https://img.shields.io/badge/UI-Streamlit-ff4b4b)
-![Gemini](https://img.shields.io/badge/LLM-Google%20Gemini-4285f4)
-
----
-
-## 📌 Overview
-
-This project lets you:
-
-- enter raw text or upload a file,
-- choose one or more AI workflow steps,
-- run them in sequence,
-- review the final output and step-by-step logs,
-- save workflows for reuse.
-
-It is useful for **document summarization**, **email drafting**, **code review assistance**, and simple **rule-based text routing**.
+> **Standardizing the operationalization of AI.** This platform transforms brittle, one-off LLM scripts into a production-grade orchestration engine with structured observability, persistence, and containerization.
 
 ---
 
-## ✨ Features
+##  Architecture Overview
 
-- **Multi-input support**: plain text or uploaded files
-- **Supported file formats**: `pdf`, `txt`, `py`, `csv`, `json`, `xlsx`, `pptx`, `jpg`, `jpeg`, `png`
-- **Reusable workflow pipeline** with selectable node order
-- **Built-in nodes** for summarization, email generation, code analysis, and condition tagging
-- **Workflow history** to save, load, and delete previous configurations
-- **Execution logs** for each workflow step
-- **Gemini integration** through a centralized service layer
+Our platform treats AI processing as a **Directed Acyclic Graph (DAG)** of independently testable, composable nodes. Each node operates on a shared `WorkflowState`, ensuring data integrity and lineage across the entire pipeline.
+
+### Core Components:
+- **Orchestration Engine**: A state-management core that handles node transitions, error recovery, and timing.
+- **Structured IO (Pydantic)**: Every node enforces strict output schemas, ensuring the system is "composable by design" and ready for downstream API consumption.
+- **Persistent Observability**: Integrated SQLite backend tracks every `execution` and detailed `step_logs` (input, output, duration, errors) for auditability.
+- **Containerized Runtime**: Standardized
+
+## Cloud Deployment (Render)
+
+This platform is ready for one-click deployment using the included `render.yaml` blueprint:
+
+1. **Push code to GitHub**: Ensure your project is in a repository.
+2. **Open Render Dashboard**: Go to [dashboard.render.com](https://dashboard.render.com).
+3. **Blueprints**: Click **"Blueprints"** -> **"New Blueprint Instance"**.
+4. **Connect Repo**: Select your repository.
+5. **Configure Secrets**:
+   - `GEMINI_API_KEY`: Your Google AI API Key.
+6. **Deploy**: Render will automatically launch the Backend (FastAPI) and the Frontend (Streamlit), linking them together.
+
+> [!TIP]
+> The UI will be available at `https://ai-workflow-frontend.onrender.com`.
+
+##  Key Features
+
+- ** Deterministic Output**: Powered by Gemini's JSON mode and validated via Pydantic models.
+- ** Execution Tracking**: Full visibility into latency and error rates at the node level.
+- ** Universal Parsing**: Native support for PDF, Image (OCR), XLSX, PPTX, and Source Code.
+- ** Configuration Persistence**: Save, load, and version workflow definitions.
+- ** Pro UI**: Premium Streamlit interface with real-time Graphviz visualization of active pipelines.
 
 ---
 
-## 🧠 Available Workflow Nodes
+##  Quick Start (Docker)
 
-| Node | What it does |
-|------|---------------|
-| `Summarizer` | Creates a short bullet-point summary of the input |
-| `Email Generator` | Drafts a professional email from the provided content |
-| `Code Analyzer` | Reviews code, highlights issues, and suggests improvements |
-| `Condition` | Performs a simple length-based check and labels input as `SHORT_TEXT` or `LONG_TEXT` |
+The fastest way to deploy the engine:
+
+1. **Clone & Config**:
+   ```bash
+   git clone https://github.com/Keerthana1367/AI-Workflow-Automation-Platform.git
+   cd AI-Workflow-Automation-Platform
+   cp .env.example .env # Add your GEMINI_API_KEY
+   ```
+
+2. **Launch**:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. **Access**:
+   Navigate to [http://localhost:8501](http://localhost:8501)
 
 ---
 
-## 🏗️ Project Structure
+##  Pipeline Schema Example (Production Proof)
 
-```text
-AI-workflow-automation-platform/
-├── app.py                    # Streamlit UI
-├── config.py                 # Environment loading and Gemini model config
-├── workflow_engine.py        # Sequential workflow runner
-├── requirements.txt          # Python dependencies
-├── test.py                   # Simple workflow execution example
-├── nodes/
-│   ├── summarizer.py         # Summarization node
-│   ├── email_generator.py    # Email generation node
-│   ├── code_analyzer.py      # Code analysis node
-│   ├── condition_node.py     # Basic condition / routing node
-│   └── base_node.py          # Base node placeholder
-├── services/
-│   └── llm_service.py        # Gemini response wrapper
-├── utils/
-│   ├── file_parser.py        # File parsing for supported formats
-│   ├── workflow_manager.py   # Save/load workflow definitions
-│   ├── helpers.py
-│   ├── logger.py
-│   └── template.py
-├── workflows/
-│   └── workflows.json        # Stored workflow configurations
-└── static/
-    └── styles.css
+Unlike prototypes that return raw strings, our nodes return structured objects. Example `SummarizerOutput`:
+
+```json
+{
+  "summary": "The platform utilizes a modular node architecture...",
+  "key_points": ["SQLite for persistence", "Pydantic for validation"],
+  "word_count": 42,
+  "confidence": 0.98
+}
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## 📈 Roadmap
 
-- **Python**
-- **Streamlit**
-- **Google Generative AI (`google-generativeai`)**
-- **PyPDF2** for PDF parsing
-- **pandas / openpyxl** for tabular files
-- **Pillow / pytesseract** for OCR image parsing
-- **python-pptx** for PowerPoint extraction
-
----
-
-## 🚀 Getting Started
-
-### 1) Clone the repository
-
-```bash
-git clone https://github.com/Keerthana1367/AI-Workflow-Automation-Platform.git
-cd AI-Workflow-Automation-Platform
-```
-
-### 2) Create and activate a virtual environment
-
-**Windows**
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-```
-
-**macOS / Linux**
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-### 3) Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4) Configure environment variables
-
-Create a `.env` file in the project root:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### 5) Install Tesseract OCR
-
-If you want image text extraction (`jpg`, `jpeg`, `png`), install **Tesseract OCR** and make sure it is available in your system `PATH`.
-
-### 6) Run the app
-
-```bash
-streamlit run app.py
-```
-
-Then open the local Streamlit URL shown in the terminal.
-
----
-
-## 🖥️ How It Works
-
-1. Choose **Text** or **File** input.
-2. Paste content or upload a supported file.
-3. Select one or more workflow steps.
-4. Click **Run Workflow**.
-5. Review the **final output** and **execution logs**.
-6. Save the workflow for later reuse.
-
----
-
-## 📷 Example Use Cases
-
-- Summarize a long PDF into key bullet points
-- Generate a professional email from rough notes
-- Analyze Python code for issues and improvement ideas
-- Route short vs. long text with a simple condition node
-
----
-
-## 🔐 Environment Notes
-
-This project uses a Gemini API key from `.env`:
-
-```env
-GEMINI_API_KEY=...
-```
-
-Do **not** commit your real `.env` file to GitHub.
-
----
-
-## 🛠️ Future Improvements
-
-Potential next enhancements:
-
-- drag-and-drop node builder
-- conditional branching between nodes
-- richer workflow persistence with metadata
-- downloadable output reports
-- test coverage and CI setup
+- [ ] **Phase 2**: FastAPI backend layer + Async job queues (Redis/Celery).
+- [ ] **Phase 2**: RAG Node integration with Vector Search (ChromaDB).
+- [ ] **Phase 3**: Prompt Versioning & Automated Evaluation (LLM-as-a-judge).
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, issues, and suggestions are welcome.
-If you fork this project, create a branch for your changes and open a pull request.
+We build for scale. Please see our contribution guidelines for adding new `BaseNode` implementations.
 
 ---
 
-## 📬 Repository
-
-GitHub: [`Keerthana1367/AI-Workflow-Automation-Platform`](https://github.com/Keerthana1367/AI-Workflow-Automation-Platform)
-
----
-
-Built for showcasing practical **AI workflow automation** with a simple and extensible Python architecture.
+*Built with ❤️ for AI Engineers who care about structure.*
