@@ -32,7 +32,7 @@ This platform is ready for one-click deployment using the included `render.yaml`
 6. **Deploy**: Render will automatically launch the Backend (FastAPI) and the Frontend (Streamlit), linking them together.
 
 > [!TIP]
-> The UI will be available at `https://ai-workflow-frontend.onrender.com`.
+> The UI will be available at `https://ai-workflow-automation-platform-gxgq.onrender.com`.
 
 ##  Key Features
 
