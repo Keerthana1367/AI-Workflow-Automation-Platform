@@ -7,9 +7,10 @@ uvicorn main:app --host 0.0.0.0 --port 8000 &
 # Wait for backend to wake up
 sleep 5
 
-# Set Streamlit configurations via Env Vars (more robust than CLI flags in some shells)
-# This avoids the "$PORT is not a valid integer" error
-export STREAMLIT_SERVER_PORT=${PORT:-8501}
+# Set Streamlit configurations via Env Vars
+# We force it to be a number to avoid the "$PORT" literal string error
+REAL_PORT=$(echo $PORT | tr -cd '0-9')
+export STREAMLIT_SERVER_PORT=${REAL_PORT:-8501}
 export STREAMLIT_SERVER_ADDRESS=0.0.0.0
 export API_URL="http://127.0.0.1:8000/api"
 
