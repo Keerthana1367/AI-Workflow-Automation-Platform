@@ -25,4 +25,6 @@ Thumbs.db
 # Build artifacts
 build/
 dist/
-*.egg-info/
+# DB files
+platform.db
+*.sqlite3

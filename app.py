@@ -12,8 +12,15 @@ st.set_page_config(page_title="AI Workflow | System v3", layout="wide", page_ico
 
 # On Render, the backend URL will be provided via Environment Variable
 API_URL = os.getenv("API_URL", "http://localhost:8000/api")
+
+# Handle missing protocol or trailing slashes
+if API_URL.startswith("ai-workflow-backend"): # Handle Render internal hostname if passed raw
+    API_URL = f"http://{API_URL}"
+elif not (API_URL.startswith("http://") or API_URL.startswith("https://")):
+    API_URL = f"http://{API_URL}"
+
 if not API_URL.endswith("/api"):
-    API_URL = f"{API_URL}/api"
+    API_URL = f"{API_URL.rstrip('/')}/api"
 
 # --- Premium Glassmorphism CSS ---
 st.markdown("""
@@ -35,15 +42,23 @@ if 'user_input' not in st.session_state: st.session_state.user_input = ""
 with st.sidebar:
     st.header("🕒 Recent Executions")
     try:
-        resp = httpx.get(f"{API_URL}/history")
+        resp = httpx.get(f"{API_URL}/history", timeout=5.0)
         if resp.status_code == 200:
-            for ex in resp.json():
+            history = resp.json()
+            if not history:
+                st.caption("No recent runs.")
+            for ex in history:
                 with st.expander(f"{ex.get('workflow_name') or 'Custom Run'}"):
                     st.caption(f"ID: {ex['id'][:8]} | {ex['status']}")
                     if st.button("View", key=f"view_{ex['id']}"):
                         st.session_state.exec_id = ex['id']
-    except Exception:
-        st.error("API Offline")
+        else:
+            st.error(f"Backend Error: {resp.status_code}")
+    except httpx.ConnectError:
+        st.error("🔌 Backend Offline (Connection Refused)")
+        st.info("Run `start.bat` to start the backend.")
+    except Exception as e:
+        st.error(f"API Error: {str(e)}")
 
 # --- Main Logic ---
 col_main, col_res = st.columns([2, 2])
