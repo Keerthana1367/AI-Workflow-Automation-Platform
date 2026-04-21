@@ -1,52 +1,63 @@
-# ⚡ AI Workflow Orchestration Engine (Core v2.0)
+# ⚡ AI Workflow Orchestration Engine (Core v3.0)
 
-[![Production Ready](https://img.shields.io/badge/Status-Production--Ready-green?style=for-the-badge)](https://github.com/Keerthana1367/AI-Workflow-Automation-Platform)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=railway)](https://ai-workflow-backend-production-11e3.up.railway.app)
 [![Docker](https://img.shields.io/badge/Infrastructure-Docker-blue?style=for-the-badge&logo=docker)](https://www.docker.com/)
-[![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite)](https://www.sqlite.org/)
-[![Pydantic](https://img.shields.io/badge/Validation-Pydantic-E92063?style=for-the-badge)](https://docs.pydantic.dev/)
+[![Gemini](https://img.shields.io/badge/AI-Google_Gemini-blueviolet?style=for-the-badge)](https://ai.google.dev/)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 
-> **Standardizing the operationalization of AI.** This platform transforms brittle, one-off LLM scripts into a production-grade orchestration engine with structured observability, persistence, and containerization.
+> **Standardizing the operationalization of AI.** This platform transforms brittle, one-off LLM scripts into a production-grade orchestration engine with structured observability, persistence, and automated cloud deployment.
+
+![Platform Overview](./static/overview.png)
 
 ---
 
-##  Architecture Overview
+## 🚀 Live Deployment
+The platform is currently live and hosted on Railway:
+🔗 **[Launch AI Workflow Orchestrator](https://ai-workflow-backend-production-11e3.up.railway.app)**
+
+---
+
+## 🛠️ Architecture & Core Features
 
 Our platform treats AI processing as a **Directed Acyclic Graph (DAG)** of independently testable, composable nodes. Each node operates on a shared `WorkflowState`, ensuring data integrity and lineage across the entire pipeline.
 
-### Core Components:
-- **Orchestration Engine**: A state-management core that handles node transitions, error recovery, and timing.
-- **Structured IO (Pydantic)**: Every node enforces strict output schemas, ensuring the system is "composable by design" and ready for downstream API consumption.
-- **Persistent Observability**: Integrated SQLite backend tracks every `execution` and detailed `step_logs` (input, output, duration, errors) for auditability.
-- **Containerized Runtime**: Standardized
-
-## Cloud Deployment (Render)
-
-This platform is ready for one-click deployment using the included `render.yaml` blueprint:
-
-1. **Push code to GitHub**: Ensure your project is in a repository.
-2. **Open Render Dashboard**: Go to [dashboard.render.com](https://dashboard.render.com).
-3. **Blueprints**: Click **"Blueprints"** -> **"New Blueprint Instance"**.
-4. **Connect Repo**: Select your repository.
-5. **Configure Secrets**:
-   - `GEMINI_API_KEY`: Your Google AI API Key.
-6. **Deploy**: Render will automatically launch the Backend (FastAPI) and the Frontend (Streamlit), linking them together.
-
-> [!TIP]
-> The UI will be available at `https://ai-workflow-automation-platform-gxgq.onrender.com`.
-
-##  Key Features
-
-- ** Deterministic Output**: Powered by Gemini's JSON mode and validated via Pydantic models.
-- ** Execution Tracking**: Full visibility into latency and error rates at the node level.
-- ** Universal Parsing**: Native support for PDF, Image (OCR), XLSX, PPTX, and Source Code.
-- ** Configuration Persistence**: Save, load, and version workflow definitions.
-- ** Pro UI**: Premium Streamlit interface with real-time Graphviz visualization of active pipelines.
+### Core Capabilities:
+- **🎛️ Orchestration Engine**: A state-management core that handles asynchronous node transitions, auto-recovery, and granular timing.
+- **🛡️ Structured IO (Pydantic)**: Every node enforces strict output schemas via Gemini's JSON mode, ensuring the system is "composable by design."
+- **📊 Persistent Observability**: Integrated SQLite backend tracks every `execution` and detailed `step_logs` (input, output, duration, errors) for full auditability.
+- **🐳 Containerized Deployment**: Production-ready Docker configuration optimized for cloud platforms like Railway and Render.
+- **🎨 Premium UI**: A high-performance Streamlit dashboard featuring glassmorphism aesthetics and real-time execution feedback.
 
 ---
 
-##  Quick Start (Docker)
+## 🏗️ System Visualizer
 
-The fastest way to deploy the engine:
+```mermaid
+graph TD
+    User([User Input]) --> Gateway{FastAPI Gateway}
+    Gateway --> Engine[Workflow Engine]
+    Engine --> Node1[Summarizer Node]
+    Engine --> Node2[Code Analyzer Node]
+    Engine --> Node3[RAG Node]
+    Node1 & Node2 & Node3 --> State[(Workflow State)]
+    State --> DB[(SQLite Persistence)]
+    State --> UI[Streamlit Frontend]
+```
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Streamlit (Python)
+- **Backend**: FastAPI (Python)
+- **AI Models**: Google Gemini 2.5 Flash Lite
+- **Validation**: Pydantic v2
+- **Database**: SQLite (SQLAlchemy/Raw SQL)
+- **Deployment**: Docker, Railway, Render
+
+---
+
+## 🏁 Quick Start (Local Setup)
 
 1. **Clone & Config**:
    ```bash
@@ -55,43 +66,28 @@ The fastest way to deploy the engine:
    cp .env.example .env # Add your GEMINI_API_KEY
    ```
 
-2. **Launch**:
+2. **Launch with One Click (Windows)**:
+   Double-click `start.bat` to launch both the Backend and Frontend simultaneously.
+
+3. **Docker Launch**:
    ```bash
    docker-compose up --build
    ```
-
-3. **Access**:
-   Navigate to [http://localhost:8501](http://localhost:8501)
-
----
-
-##  Pipeline Schema Example (Production Proof)
-
-Unlike prototypes that return raw strings, our nodes return structured objects. Example `SummarizerOutput`:
-
-```json
-{
-  "summary": "The platform utilizes a modular node architecture...",
-  "key_points": ["SQLite for persistence", "Pydantic for validation"],
-  "word_count": 42,
-  "confidence": 0.98
-}
-```
 
 ---
 
 ## 📈 Roadmap
 
-- [ ] **Phase 2**: FastAPI backend layer + Async job queues (Redis/Celery).
-- [ ] **Phase 2**: RAG Node integration with Vector Search (ChromaDB).
-- [ ] **Phase 3**: Prompt Versioning & Automated Evaluation (LLM-as-a-judge).
+- [x] **Phase 1**: Core Orchestration Engine & Basic Nodes.
+- [x] **Phase 2**: Asynchronous processing with FastAPI & Background Tasks.
+- [x] **Phase 3**: Railway/Render Cloud Deployment & Persistent DB.
+- [ ] **Phase 4**: Multi-agent support (LangGraph integration).
+- [ ] **Phase 5**: Advanced RAG with ChromaDB vector store.
 
 ---
 
 ## 🤝 Contributing
-
-We build for scale. Please see our contribution guidelines for adding new `BaseNode` implementations.
+Built with performance and scalability in mind. Contributions to the `BaseNode` interface are always welcome.
 
 ---
-
-*Built with ❤️ for AI Engineers who care about structure.*
+*Developed for AI Engineers who care about structure and reliability.*
