@@ -23,9 +23,5 @@ COPY . .
 # Ensure DB is ignored in local builds but this is for production
 # platform.db is in .gitignore so it won't be copied if .git is there
 
-# Fix line endings and permissions
-RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
-
-# Railway uses $PORT. We handle this inside start.sh
-# CMD uses shell form to ensure $PORT is available
-CMD ["/bin/bash", "-c", "./start.sh"]
+# Railway injects $PORT at runtime; default to 8000 for local use
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
