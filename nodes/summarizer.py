@@ -10,7 +10,7 @@ class SummarizerNode(BaseNode):
         self.log("Summarizing content with structured output...")
         prompt = f"""
         You are an expert summarizer.
-        Task: Summarize the following text clearly and concisely.
+        Task: Summarize the following text clearly and concisely and in detail.
         Text: {state.output or state.input}
         """
         try:
