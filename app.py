@@ -44,6 +44,7 @@ if 'user_input' not in st.session_state: st.session_state.user_input = ""
 # --- Sidebar: History ---
 with st.sidebar:
     st.header("🕒 Recent Executions")
+    st.caption(f"Connected to: {API_URL}")
     try:
         resp = httpx.get(f"{API_URL}/history", timeout=5.0)
         if resp.status_code == 200:
