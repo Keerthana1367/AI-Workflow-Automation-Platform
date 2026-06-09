@@ -29,8 +29,8 @@ class SearchResult(BaseModel):
     snippet: str
 
 class SearchOutput(BaseModel):
-    query: str
-    results: List[SearchResult]
+    query: Optional[str] = None
+    results: Optional[List[SearchResult]] = None
     summary_of_findings: str
 
 class RagOutput(BaseModel):

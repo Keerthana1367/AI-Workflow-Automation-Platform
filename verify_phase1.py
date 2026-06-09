@@ -1,5 +1,5 @@
 from workflow_engine import run_workflow
-from database import get_execution_history, get_step_logs, get_connection
+from database import get_execution_history, get_step_logs
 import json
 import os
 

@@ -25,21 +25,17 @@ NODE_MAP = {
 
 AVAILABLE_WORKFLOW_STEPS = sorted(list(NODE_MAP.keys()))
 
-async def run_workflow_async(selected_steps: List[str], input_text: str, workflow_name: Optional[str] = None):
+async def run_workflow_async(selected_steps: List[str], input_text: str, workflow_name: Optional[str] = None, exec_id: Optional[str] = None):
     """
     Asynchronous Orchestration Engine.
     Executes nodes in a non-blocking way for the API.
     """
     # 1. Initialize DB Record
-    from database import get_connection
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM workflows WHERE name = ?", (workflow_name,))
-    row = cursor.fetchone()
-    workflow_id = row['id'] if row else None
-    conn.close()
+    from database import get_workflow_id_by_name
+    workflow_id = get_workflow_id_by_name(workflow_name)
 
-    exec_id = create_execution(workflow_id, input_text[:100])
+    if not exec_id:
+        exec_id = create_execution(workflow_id, input_text[:100])
     state = WorkflowState(input_text)
     
     try:

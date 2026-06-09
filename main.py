@@ -1,12 +1,29 @@
 import asyncio
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from workflow_engine import run_workflow_async, AVAILABLE_WORKFLOW_STEPS
-from database import get_execution_history, get_step_logs, get_connection
+from database import get_execution_history, get_step_logs, get_execution_status
 import json
 
 app = FastAPI(title="AI Workflow API", description="Production Backend for AI Automation")
+
+# --- CORS (allow Streamlit frontend from any Render domain) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Root Route ---
+@app.get("/")
+def root():
+    """Root endpoint — redirects to API docs."""
+    return RedirectResponse(url="/docs")
 
 # --- Schemas ---
 
@@ -50,7 +67,7 @@ async def trigger_workflow(req: WorkflowRequest, background_tasks: BackgroundTas
     exec_id = create_execution(None, req.input_text[:100])
     
     async def run_and_log():
-        await run_workflow_async(req.nodes, req.input_text, req.workflow_name)
+        await run_workflow_async(req.nodes, req.input_text, req.workflow_name, exec_id=exec_id)
 
     background_tasks.add_task(run_and_log)
     
@@ -61,11 +78,7 @@ async def get_execution(exec_id: str):
     """
     Polls the status of a specific execution.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT status, final_output FROM executions WHERE id = ?", (exec_id,))
-    row = cursor.fetchone()
-    conn.close()
+    row = get_execution_status(exec_id)
     
     if not row:
         raise HTTPException(status_code=404, detail="Execution not found")

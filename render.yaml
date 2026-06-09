@@ -6,10 +6,14 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false # Set this in Render Dashboard
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-workflow-db
+          property: connectionString
 
   # 2. AI Frontend (Streamlit)
   - type: web
@@ -19,9 +23,14 @@ services:
     startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
     envVars:
       - key: API_URL
-        fromService:
-          name: ai-workflow-backend
-          type: web
-          property: host
+        value: https://ai-workflow-backend.onrender.com/api
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-workflow-db
+          property: connectionString
+
+databases:
+  - name: ai-workflow-db
+    plan: free

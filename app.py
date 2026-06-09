@@ -70,7 +70,7 @@ with col_main:
     if input_mode == "Text":
         inner_input = st.text_area("Content", height=150, value=st.session_state.user_input)
     else:
-        uploaded = st.file_uploader("Upload", type=["pdf", "png", "jpg", "txt"])
+        uploaded = st.file_uploader("Upload", type=["pdf", "png", "jpg", "txt", "json", "csv", "xlsx"])
         if uploaded:
             inner_input = parse_file(uploaded)
         else: inner_input = ""
@@ -149,7 +149,7 @@ with col_res:
                         break
                     else:
                         st.write("Processing... 🔄")
-                        time.sleep(2)
+                        time.sleep(0.5)
             except Exception as e:
                 st.error(f"Polling error: {e}")
                 break

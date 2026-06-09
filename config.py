@@ -1,15 +1,15 @@
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from groq import Groq
 
 # Load environment variables
 load_dotenv()
 
 # Get API key
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
+# Create client
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
-# Create model instance
-model = genai.GenerativeModel("gemini-2.5-flash-lite")
+# Define model name
+MODEL_NAME = "llama-3.1-8b-instant"

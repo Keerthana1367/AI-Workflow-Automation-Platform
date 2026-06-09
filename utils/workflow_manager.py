@@ -19,14 +19,8 @@ def save_workflow(name, steps, output=None, history=None):
 
 def get_workflow_by_name(name):
     """Retrieves steps for a specific workflow name."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT steps FROM workflows WHERE name = ?", (name,))
-    row = cursor.fetchone()
-    conn.close()
-    if row:
-        return json.loads(row['steps'])
-    return None
+    from database import get_workflow_steps_by_name
+    return get_workflow_steps_by_name(name)
 
 def get_all_workflows():
     """Maps SQL rows to the format expected by the Streamlit UI."""
