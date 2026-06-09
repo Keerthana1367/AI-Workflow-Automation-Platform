@@ -3,7 +3,7 @@
 > **Build and run multi-step AI pipelines without writing a single prompt — chain specialized AI agents where the output of one becomes the input of the next.**
 
 ---
-## Live link-https://ai-workflow-automation-platform-foaqsza53df8dggceb833y.streamlit.app/
+🔗 **[Live Demo → AI_workflow_platform](https://ai-workflow-automation-platform-foaqsza53df8dggceb833y.streamlit.app/)**
 ##  Demo-
 
 ### Pipeline: ADAS.json → Summarizer → Web Search → Email Generator
