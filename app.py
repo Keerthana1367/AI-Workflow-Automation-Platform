@@ -10,8 +10,11 @@ import os
 # --- Configuration ---
 st.set_page_config(page_title="AI Workflow | System v3", layout="wide", page_icon="⚡")
 
-# On Render, the backend URL will be provided via Environment Variable
-API_URL = os.getenv("API_URL", "http://localhost:8000/api")
+# Prioritize Streamlit secrets if deployed on Streamlit Community Cloud
+try:
+    API_URL = st.secrets.get("API_URL", os.getenv("API_URL", "http://localhost:8000/api"))
+except Exception:
+    API_URL = os.getenv("API_URL", "http://localhost:8000/api")
 
 # Handle missing protocol or trailing slashes
 if API_URL.startswith("ai-workflow-backend"): # Handle Render internal hostname if passed raw
