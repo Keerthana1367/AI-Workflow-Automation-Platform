@@ -26,33 +26,35 @@ class WebSearchNode(BaseNode):
             keywords = generate_response(query_prompt).strip().strip('"')
             self.log(f"Extracted Keywords: '{keywords}'")
             
-            # Perform robust custom search via DuckDuckGo Lite POST (bulletproof against bot blockers)
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0",
-                "Content-Type": "application/x-www-form-urlencoded"
-            }
+            # Perform robust custom search via Wikipedia API (bulletproof against Cloud Server IP blocks)
+            headers = {"User-Agent": "AI-Workflow-Bot/1.0 (https://github.com)"}
             
-            def scrape_ddg_lite(q_str):
-                res = requests.post("https://lite.duckduckgo.com/lite/", data={"q": q_str}, headers=headers)
-                soup = BeautifulSoup(res.text, "html.parser")
-                links = soup.select('.result-link')
-                snippets = soup.select('.result-snippet')
+            def scrape_wiki(q_str):
+                params = {
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": q_str,
+                    "format": "json",
+                    "utf8": ""
+                }
+                res = requests.get("https://en.wikipedia.org/w/api.php", params=params, headers=headers)
+                data = res.json()
                 
                 results = []
-                for i in range(min(5, len(links), len(snippets))):
-                    title = links[i].text
-                    link = links[i]['href']
-                    # DuckDuckGo wraps actual links in a redirect url sometimes, but returning the redirect is perfectly fine.
-                    snippet = snippets[i].text.strip()
+                for item in data.get("query", {}).get("search", [])[:5]:
+                    title = item["title"]
+                    link = f"https://en.wikipedia.org/wiki/{urllib.parse.quote(title.replace(' ', '_'))}"
+                    # Wikipedia returns HTML snippets, strip them cleanly
+                    snippet = BeautifulSoup(item["snippet"], "html.parser").text
                     results.append(SearchResult(title=title, link=link, snippet=snippet))
                 return results
 
-            search_results = scrape_ddg_lite(keywords)
+            search_results = scrape_wiki(keywords)
             
             if not search_results:
                 # Fallback to broader search
                 fallback_query = " ".join(keywords.split()[:2])
-                search_results = scrape_ddg_lite(fallback_query)
+                search_results = scrape_wiki(fallback_query)
 
             if search_results:
                 
